@@ -1,0 +1,53 @@
+version: '3.9'
+services:
+  postgres-db:
+    image: postgres:14-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - ~/apps/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=12345
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=bancoPruebas
+
+  cliente-persona:
+    image: openjdk:17
+    container_name: cliente_persona_service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres-db
+    environment:
+      SPRING_APPLICATION_JSON: '{
+        "spring.datasource.url"  : "jdbc:postgresql://postgres-db:5432/bancoPruebas",
+        "spring.datasource.username" : "postgres",
+        "spring.datasource.password" : "12345",
+        "spring.jpa.properties.hibernate.dialect" : "org.hibernate.dialect.PostgreSQLDialect",
+        "spring.jpa.hibernate.ddl-auto" : "update"
+      }'
+    volumes:
+      - ./cliente-persona/target/cliente-persona-0.0.1-SNAPSHOT.jar:/cliente-persona.jar
+    entrypoint: ["java", "-jar", "/cliente-persona.jar"]
+
+  cuenta-movimiento:
+    image: openjdk:17
+    container_name: cuenta_movimiento_service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres-db
+    environment:
+      SPRING_APPLICATION_JSON: '{
+        "spring.datasource.url"  : "jdbc:postgresql://postgres-db:5432/bancoPruebas",
+        "spring.datasource.username" : "postgres",
+        "spring.datasource.password" : "12345",
+        "spring.jpa.properties.hibernate.dialect" : "org.hibernate.dialect.PostgreSQLDialect",
+        "spring.jpa.hibernate.ddl-auto" : "update"
+      }'
+    volumes:
+      - ./cuenta-movimiento/target/cuenta-movimiento-0.0.1-SNAPSHOT.jar:/cuenta-movimiento.jar
+    entrypoint: ["java", "-jar", "/cuenta-movimiento.jar"]
+
+volumes:
+  postgres-data:
